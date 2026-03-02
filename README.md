@@ -79,10 +79,10 @@ Télécharger : https://grafana.com/grafana/download
 - **Hyperparamètres** : n_estimators=100, max_depth=15, min_samples_split=5
 - **Évaluation** : R², RMSE, MAE, Feature Importance
 
-### 2. K-Means (Clustering)
-- **Objectif** : Segmenter départements en profils régionaux
-- **Clusters** : 3-5 groupes (urbain/rural, riche/pauvre)
-- **Évaluation** : Silhouette Score, Inertia
+### 2. XGBoost (Régression Graduelle)
+- **Objectif** : Prédire tendances électorales avec gradient boosting
+- **Hyperparamètres** : n_estimators=100, max_depth=6, learning_rate=0.1
+- **Évaluation** : R², RMSE, MAE, Feature Importance
 
 ## Exécution des Scripts
 
@@ -96,7 +96,7 @@ python scripts/02_nettoyage.py
 # Étape 3 : Analyse exploratoire
 python scripts/03_exploration.py
 
-# Étape 4 : Modélisation (RF + K-Means)
+# Étape 4 : Modélisation (RF + XGBoost)
 python scripts/04_modeles.py
 ```
 
@@ -115,7 +115,7 @@ python scripts/04_modeles.py
 - ✅ Architecture Big Data (ETL)
 - ✅ Nettoyage données (Pandas)
 - ✅ Exploration & visualisation
-- ✅ Machine Learning (Random Forest, K-Means)
+- ✅ Machine Learning (Random Forest, XGBoost)
 - ✅ Dashboards temps réel (Grafana)
 - ✅ Qualité & sécurité données (RGPD)
 
@@ -134,7 +134,7 @@ python scripts/04_modeles.py
 | Extraction données | 3 jours | ⏳ À venir |
 | Nettoyage Pandas | 3 jours | ⏳ À venir |
 | Analyse exploratoire | 3 jours | ⏳ À venir |
-| Modélisation RF + K-Means | 4 jours | ⏳ À venir |
+| Modélisation RF + XGBoost | 4 jours | ⏳ À venir |
 | Grafana + Dashboards | 2 jours | ⏳ À venir |
 | Documentation & rapport | 3 jours | ⏳ À venir |
 | **TOTAL** | **20 jours** | |

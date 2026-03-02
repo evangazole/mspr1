@@ -10,10 +10,10 @@ Construction et évaluation de 2 modèles :
    - Évaluation (R², RMSE, MAE)
    - Feature importance
 
-2. K-MEANS : Clustering pour segmenter régions
-   - Déterminer nombre clusters optimal (Elbow)
-   - Analyse des profils
-   - Visualisation clusters
+2. XGBOOST : Gradient Boosting pour prédictions électorales
+   - Hyperparamètrage optimal
+   - Évaluation (R², RMSE, MAE)
+   - Feature importance et SHAP values
 
 Données : data/processed/mspr1_aura_clean.csv
 Modèles sauvegardés : scripts/ (pickle)
@@ -33,15 +33,14 @@ from pathlib import Path
 from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.cluster import KMeans
-from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, silhouette_score
-from sklearn.decomposition import PCA
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
+from xgboost import XGBRegressor
 
 # Import config
 from config import (
     PATH_DATA_PROCESSED, PATH_RAPPORTS, RANDOM_STATE, TEST_SIZE,
     VALIDATION_K_FOLD, RF_N_ESTIMATORS, RF_MAX_DEPTH, RF_MIN_SAMPLES_SPLIT,
-    KMEANS_N_CLUSTERS
+    XGB_N_ESTIMATORS, XGB_MAX_DEPTH, XGB_LEARNING_RATE, XGB_SUBSAMPLE, XGB_COLSAMPLE_BYTREE
 )
 
 print("=" * 70)
@@ -154,80 +153,90 @@ def train_random_forest(df, numeric_cols, target_col):
 
 
 # ============================================================================
-# ÉTAPE 3 : MODÈLE 2 - K-MEANS
+# ÉTAPE 3 : MODÈLE 2 - XGBOOST
 # ============================================================================
-def train_kmeans(df, numeric_cols):
-    """Entraîner modèle K-Means."""
-    print("\n[3] Entraînement K-Means...")
+def train_xgboost(df, numeric_cols, target_col):
+    """Entraîner modèle XGBoost."""
+    print("\n[3] Entraînement XGBoost...")
     
-    # Préparer données
+    if target_col is None:
+        print("  ⚠ Pas de variable cible - modèle non entraîné")
+        return None, None, None
+    
+    # Préparer features et target
     X = df[numeric_cols].dropna()
+    y = df.loc[X.index, target_col]
+    
+    # Supprimer rows avec NaN target
+    valid_idx = ~y.isnull()
+    X = X[valid_idx]
+    y = y[valid_idx]
+    
+    if len(y) < 10:
+        print("  ⚠ Pas assez de données pour entraîner le modèle")
+        return None, None, None
+    
+    # Division train/test
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE
+    )
     
     # Normaliser
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
     
-    # Déterminer nombre clusters optimal (Elbow method)
-    inertias = []
-    silhouette_scores = []
-    K_range = range(2, 8)
+    # Entraîner XGBoost
+    xgb_model = XGBRegressor(
+        n_estimators=XGB_N_ESTIMATORS,
+        max_depth=XGB_MAX_DEPTH,
+        learning_rate=XGB_LEARNING_RATE,
+        subsample=XGB_SUBSAMPLE,
+        colsample_bytree=XGB_COLSAMPLE_BYTREE,
+        random_state=RANDOM_STATE,
+        verbosity=0
+    )
     
-    for k in K_range:
-        km = KMeans(n_clusters=k, random_state=RANDOM_STATE, n_init=10)
-        km.fit(X_scaled)
-        inertias.append(km.inertia_)
-        silhouette_scores.append(silhouette_score(X_scaled, km.labels_))
+    xgb_model.fit(X_train_scaled, y_train)
     
-    # Visualiser Elbow
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    # Prédictions
+    y_pred_train = xgb_model.predict(X_train_scaled)
+    y_pred_test = xgb_model.predict(X_test_scaled)
     
-    ax1.plot(K_range, inertias, 'bo-', linewidth=2, markersize=8)
-    ax1.set_xlabel('Nombre de clusters (k)')
-    ax1.set_ylabel('Inertie')
-    ax1.set_title('Elbow Method')
-    ax1.grid(True, alpha=0.3)
+    # Évaluation
+    r2_train = r2_score(y_train, y_pred_train)
+    r2_test = r2_score(y_test, y_pred_test)
+    rmse_test = np.sqrt(mean_squared_error(y_test, y_pred_test))
+    mae_test = mean_absolute_error(y_test, y_pred_test)
     
-    ax2.plot(K_range, silhouette_scores, 'ro-', linewidth=2, markersize=8)
-    ax2.set_xlabel('Nombre de clusters (k)')
-    ax2.set_ylabel('Silhouette Score')
-    ax2.set_title('Silhouette Analysis')
-    ax2.grid(True, alpha=0.3)
+    print(f"  ✓ XGBoost entraîné")
+    print(f"    - R² train : {r2_train:.4f}")
+    print(f"    - R² test : {r2_test:.4f}")
+    print(f"    - RMSE test : {rmse_test:.4f}")
+    print(f"    - MAE test : {mae_test:.4f}")
     
+    # Feature importance
+    feature_importance = pd.DataFrame({
+        'feature': numeric_cols[:len(xgb_model.feature_importances_)],
+        'importance': xgb_model.feature_importances_
+    }).sort_values('importance', ascending=False)
+    
+    print(f"\n  Top 5 features :")
+    print(feature_importance.head())
+    
+    # Visualiser feature importance
+    plt.figure(figsize=(10, 6))
+    plt.barh(feature_importance['feature'][:15], feature_importance['importance'][:15])
+    plt.xlabel('Importance')
+    plt.title('XGBoost - Feature Importance')
     plt.tight_layout()
-    plt.savefig(f"{PATH_RAPPORTS}07_kmeans_elbow.png", dpi=300)
-    plt.close()
-    
-    # Utiliser k optimal
-    best_k = KMEANS_N_CLUSTERS
-    kmeans_model = KMeans(n_clusters=best_k, random_state=RANDOM_STATE, n_init=10)
-    clusters = kmeans_model.fit_predict(X_scaled)
-    
-    print(f"  ✓ K-Means entraîné (k={best_k})")
-    print(f"    - Silhouette score : {silhouette_scores[best_k-2]:.4f}")
-    
-    # Visualiser clusters (PCA 2D)
-    pca = PCA(n_components=2)
-    X_pca = pca.fit_transform(X_scaled)
-    
-    plt.figure(figsize=(10, 8))
-    scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], c=clusters, cmap='viridis', s=100, alpha=0.6)
-    plt.scatter(pca.transform(kmeans_model.cluster_centers_)[:, 0],
-                pca.transform(kmeans_model.cluster_centers_)[:, 1],
-                c='red', marker='X', s=300, edgecolors='black', linewidths=2, label='Centroids')
-    plt.xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.1%})')
-    plt.ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.1%})')
-    plt.title('K-Means Clustering (PCA visualization)')
-    plt.colorbar(scatter, label='Cluster')
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(f"{PATH_RAPPORTS}08_kmeans_visualization.png", dpi=300)
+    plt.savefig(f"{PATH_RAPPORTS}07_xgb_feature_importance.png", dpi=300)
     plt.close()
     
     # Sauvegarder modèle
-    with open('./scripts/kmeans_model.pkl', 'wb') as f:
-        pickle.dump(kmeans_model, f)
+    xgb_model.save_model('./scripts/xgboost_model.json')
     
-    return kmeans_model, clusters, scaler
+    return xgb_model, scaler, feature_importance
 
 
 # ============================================================================
@@ -266,10 +275,10 @@ if __name__ == "__main__":
         df, numeric_cols, target_col = load_and_prepare_data()
         
         # Random Forest
-        rf_model, scaler, feature_importance = train_random_forest(df, numeric_cols, target_col)
+        rf_model, rf_scaler, rf_importance = train_random_forest(df, numeric_cols, target_col)
         
-        # K-Means
-        kmeans_model, clusters, kmeans_scaler = train_kmeans(df, numeric_cols)
+        # XGBoost
+        xgb_model, xgb_scaler, xgb_importance = train_xgboost(df, numeric_cols, target_col)
         
         # Prédictions
         if rf_model is not None:
@@ -283,7 +292,7 @@ if __name__ == "__main__":
         print()
         print("Modèles sauvegardés :")
         print("  - Random Forest : scripts/random_forest_model.pkl")
-        print("  - K-Means : scripts/kmeans_model.pkl")
+        print("  - XGBoost : scripts/xgboost_model.json")
         print()
         print("Visualisations sauvegardées dans : {PATH_RAPPORTS}")
         print()
