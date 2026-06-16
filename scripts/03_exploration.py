@@ -1,19 +1,4 @@
-"""
-SCRIPT 03 - ANALYSE EXPLORATOIRE ET VISUALISATIONS
-==================================================
-
-Exploration visuelle et statistique des données nettoyées :
-- Statistiques descriptives
-- Matrice corrélations
-- Visualisations : histogrammes, boxplots, heatmaps
-- Détection outliers
-- Tendances temporelles
-
-Données : data/processed/mspr1_aura_clean.csv
-Visualisations exportées : rapports/
-
-Exécution : python scripts/03_exploration.py
-"""
+"""Analyse exploratoire des données nettoyées : statistiques descriptives, corrélations et visualisations."""
 
 import os
 import pandas as pd

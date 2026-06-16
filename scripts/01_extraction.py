@@ -1,16 +1,4 @@
-"""
-SCRIPT 01 - EXTRACTION DES DONNÉES
-===================================
-
-Récupération des 10 indicateurs depuis les sources publiques :
-- INSEE (économie, démographie)
-- Ministère Intérieur (élections, sécurité)
-- Teruti-Lucas, Foncier, etc.
-
-Données sauvegardées dans : data/raw/
-
-Exécution : python scripts/01_extraction.py
-"""
+"""Extraction des 10 indicateurs socio-économiques depuis les sources publiques (INSEE, Ministère de l'Intérieur, etc.)."""
 
 import os
 import pandas as pd

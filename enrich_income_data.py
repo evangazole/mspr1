@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""
-Enrich colonnes-mspr_AURA.csv with median income from revenu file
-Rules:
-1. Use median if available
-2. Else calculate from quartiles if available
-3. Else leave empty
-"""
+"""Enrichit le fichier maître AURA avec le revenu médian des ménages par commune."""
 
 import pandas as pd
 

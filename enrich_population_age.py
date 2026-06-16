@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""
-Enrich colonnes-mspr_AURA.csv with population by age brackets
-Aggregates IRIS-level data to commune level and adds:
-- pop_age_0_14_today
-- pop_age_15_64_today
-- pop_age_65plus_today
-"""
+"""Enrichit le fichier maître AURA avec la répartition de la population par tranche d'âge (0-14, 15-64, 65+)."""
 
 import pandas as pd
 import numpy as np

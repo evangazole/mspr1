@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Convert all Excel files (.xls, .xlsx) to CSV format
-"""
+"""Convertit tous les fichiers Excel du dossier data/raw/ en format CSV."""
 
 import pandas as pd
 import os

@@ -1,26 +1,4 @@
-"""
-SCRIPT 04 - MODÉLISATION MACHINE LEARNING
-=========================================
-
-Construction et évaluation de 2 modèles :
-
-1. RANDOM FOREST : Régression supervisée pour prédire votes futurs
-   - Feature selection
-   - Hyperparamètrage
-   - Évaluation (R², RMSE, MAE)
-   - Feature importance
-
-2. XGBOOST : Gradient Boosting pour prédictions électorales
-   - Hyperparamètrage optimal
-   - Évaluation (R², RMSE, MAE)
-   - Feature importance et SHAP values
-
-Données : data/processed/mspr1_aura_clean.csv
-Modèles sauvegardés : scripts/ (pickle)
-Prédictions : data/processed/predictions.csv
-
-Exécution : python scripts/04_modeles.py
-"""
+"""Construction et évaluation des modèles de classification supervisée pour prédire les tendances électorales."""
 
 import os
 import pickle

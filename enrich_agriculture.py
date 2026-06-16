@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""
-Enrich colonnes-mspr_AURA.csv with agricultural surface area
-Data available for 2020 and 2010 from INSEE
-Adds:
-- surface_agri_today: 2020 data (most recent)
-- surface_agri_old1: 2010 data (historical baseline)
-- surface_agri_old2: 2010 data (only historical data available before 2020)
-"""
+"""Enrichit le fichier maître AURA avec les surfaces agricoles utiles (2010 et 2020) par commune."""
 
 import pandas as pd
 import numpy as np

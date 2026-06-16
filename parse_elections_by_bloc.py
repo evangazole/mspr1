@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-Map 2022 presidential candidates to political groupings
-and aggregate votes by bloc at commune level
-"""
+"""Agrège les résultats des élections présidentielles 2022 par bloc politique (G, C, D, ED) à l'échelle communale."""
 
 import pandas as pd
 import numpy as np

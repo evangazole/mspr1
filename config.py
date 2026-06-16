@@ -1,5 +1,4 @@
-# Configuration base de données PostgreSQL
-# À adapter selon votre environnement
+# Paramètres de connexion à la base de données PostgreSQL et chemins des fichiers du projet.
 
 # Connexion PostgreSQL
 DB_HOST = "localhost"

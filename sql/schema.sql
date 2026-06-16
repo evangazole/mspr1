@@ -1,7 +1,4 @@
--- ========================================================================
--- SCHEMA BASE DE DONNÉES MSPR1 - ÉLECTIONS AURA
--- PostgreSQL
--- ========================================================================
+-- Schéma de la base de données PostgreSQL pour le projet d'analyse électorale AURA.
 
 -- ========================================================================
 -- TABLE 1 : DÉPARTEMENTS

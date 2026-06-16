@@ -1,19 +1,4 @@
-"""
-SCRIPT 02 - NETTOYAGE DES DONNÉES AVEC PANDAS
-==============================================
-
-Nettoyage et préparation des données brutes avec Pandas :
-- Importer tous les CSV
-- Harmoniser formats & colonnes
-- Gérer valeurs manquantes
-- Fusionner par département
-- Exporter données nettoyées
-
-Données entrée : data/raw/
-Données sortie : data/processed/
-
-Exécution : python scripts/02_nettoyage.py
-"""
+"""Nettoyage, harmonisation et fusion des données brutes pour produire le fichier maître dans data/processed/."""
 
 import os
 import pandas as pd

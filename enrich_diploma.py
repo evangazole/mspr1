@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""
-Enrich colonnes-mspr_AURA.csv with education/diploma levels
-Aggregates IRIS-level data to commune level and adds:
-- diploma_bac_today: proportion of population with Bac or higher diploma
-- diploma_sup_today: proportion of population with higher education diploma
-"""
+"""Enrichit le fichier maître AURA avec les taux de diplômés bac+ et enseignement supérieur à l'échelle communale."""
 
 import pandas as pd
 import numpy as np

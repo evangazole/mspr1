@@ -1,3 +1,5 @@
+"""Ajoute les colonnes historiques (old1, old2) aux indicateurs 'today' du fichier maître AURA."""
+
 import pandas as pd
 
 print("Adding historical columns (old1, old2) for 'today' indicators...")

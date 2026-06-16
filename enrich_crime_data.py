@@ -1,3 +1,5 @@
+"""Enrichit le fichier maître AURA avec les taux de criminalité par département et par année."""
+
 import pandas as pd
 import numpy as np
 

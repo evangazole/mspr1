@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-Parse 2017 presidential election results and aggregate votes by political bloc
-Similar to parse_elections_by_bloc.py but for 2017
-"""
+"""Agrège les résultats des élections présidentielles 2017 par bloc politique (G, C, D, ED) à l'échelle communale."""
 
 import pandas as pd
 import numpy as np

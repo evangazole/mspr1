@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Enrichir logement_secondaire_2022.csv avec noms de communes
-"""
+"""Enrichit le fichier maître AURA avec le taux de résidences secondaires par commune."""
 
 import pandas as pd
 

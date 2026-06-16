@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""
-Enrich colonnes-mspr_AURA.csv with unemployment rates
-Data from Pole Emploi (2015-2024)
-Adds:
-- chomage_rate_today: 2024 data (most recent)
-- chomage_rate_old1: 2017 data (historical baseline)
-- chomage_rate_old2: 2022 data (recent past)
-"""
+"""Enrichit le fichier maître AURA avec les taux de chômage (2017, 2022, 2024) par commune."""
 
 import pandas as pd
 import numpy as np

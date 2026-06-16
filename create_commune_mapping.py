@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-Créer une table de correspondance communes: code_local → code_INSEE
-Utiliser elections_2022_2017.csv qui a les vrais codes INSEE dans id_brut_miom
-"""
+"""Génère une table de correspondance entre les codes locaux et les codes INSEE des communes."""
 
 import pandas as pd
 import re
