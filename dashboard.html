@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSPR1 — Dashboard Prédictions Électorales AURA 2026-2028</title>
+  <meta name="description" content="Visualisation des prédictions électorales pour la région AURA sur 1, 2 et 3 ans — modèles Random Forest, Extra Trees, KNN, Régression Logistique" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ═══════════════════════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════════════════════ */
+    :root {
+      --bg:         #0a0d14;
+      --bg2:        #111520;
+      --bg3:        #181d2e;
+      --surface:    #1c2235;
+      --border:     #252d42;
+      --text:       #e8eaf6;
+      --text2:      #8892b0;
+      --text3:      #4a5580;
+
+      --g:   #4caf94;   /* Gauche */
+      --c:   #4a90d9;   /* Centre */
+      --d:   #3e7de8;   /* Droite */
+      --ed:  #e05c5c;   /* Extrême Droite */
+
+      --accent:  #6c63ff;
+      --gold:    #f5c842;
+
+      --radius:  12px;
+      --radius2: 20px;
+      --glow:    0 0 40px rgba(108, 99, 255, 0.15);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ═══════════ ANIMATED BG ═══════════ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 10% 0%, rgba(108,99,255,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 90% 100%, rgba(76,175,148,0.06) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ═══════════ HEADER ═══════════ */
+    header {
+      position: relative;
+      z-index: 10;
+      padding: 40px 48px 32px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(17, 21, 32, 0.8);
+      backdrop-filter: blur(20px);
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(108, 99, 255, 0.15);
+      border: 1px solid rgba(108, 99, 255, 0.3);
+      border-radius: 100px;
+      padding: 6px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #a89fff;
+      margin-bottom: 16px;
+    }
+
+    .header-badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: #6c63ff;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(22px, 3vw, 36px);
+      font-weight: 700;
+      background: linear-gradient(135deg, #e8eaf6 0%, #a89fff 60%, #6c63ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+    }
+
+    .header-subtitle {
+      margin-top: 8px;
+      font-size: 14px;
+      color: var(--text2);
+      font-weight: 400;
+    }
+
+    .header-meta {
+      display: flex;
+      gap: 24px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .meta-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    .meta-chip strong { color: var(--text); }
+
+    /* ═══════════ MAIN LAYOUT ═══════════ */
+    main {
+      position: relative;
+      z-index: 1;
+      padding: 40px 48px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+
+    /* ═══════════ CARDS ═══════════ */
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius2);
+      padding: 24px;
+      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(108,99,255,0.4), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .card:hover {
+      border-color: rgba(108,99,255,0.4);
+      transform: translateY(-2px);
+      box-shadow: var(--glow);
+    }
+
+    .card:hover::before { opacity: 1; }
+
+    /* ═══════════ KPI CARDS ═══════════ */
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius2);
+      padding: 20px 24px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .kpi-card .glow-dot {
+      position: absolute;
+      top: -20px; right: -20px;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      opacity: 0.15;
+      filter: blur(20px);
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .kpi-sub {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .kpi-bar {
+      margin-top: 12px;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--border);
+      overflow: hidden;
+    }
+
+    .kpi-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* ═══════════ BLOC COLORS ═══════════ */
+    .bloc-G  { color: var(--g); }
+    .bloc-C  { color: var(--c); }
+    .bloc-D  { color: var(--d); }
+    .bloc-ED { color: var(--ed); }
+
+    .bg-G  { background: var(--g); }
+    .bg-C  { background: var(--c); }
+    .bg-D  { background: var(--d); }
+    .bg-ED { background: var(--ed); }
+
+    /* ═══════════ LEGEND ═══════════ */
+    .legend {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 2px;
+    }
+
+    /* ═══════════ CHART CONTAINER ═══════════ */
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    canvas { max-width: 100%; }
+
+    /* ═══════════ MODEL TABS ═══════════ */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg2);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      background: transparent;
+      color: var(--text2);
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .tab:hover { color: var(--text); background: var(--border); }
+
+    .tab.active {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 2px 12px rgba(108,99,255,0.4);
+    }
+
+    /* ═══════════ TIMELINE INDICATOR ═══════════ */
+    .timeline {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 28px;
+      padding: 0 20px;
+    }
+
+    .tl-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      position: relative;
+    }
+
+    .tl-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--border);
+      border: 2px solid var(--text3);
+      z-index: 2;
+      transition: all 0.3s;
+    }
+
+    .tl-dot.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(108,99,255,0.6);
+    }
+
+    .tl-dot.future {
+      background: transparent;
+      border-color: var(--border);
+      border-style: dashed;
+    }
+
+    .tl-label {
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text3);
+    }
+
+    .tl-label.active { color: var(--accent); }
+    .tl-label.future { color: var(--text3); font-style: italic; }
+
+    .tl-sublabel {
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    .tl-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      margin: 0;
+    }
+
+    /* ═══════════ DEPT TABLE ═══════════ */
+    .dept-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .dept-table th {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text3);
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dept-table td {
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--text2);
+      border-bottom: 1px solid rgba(37, 45, 66, 0.5);
+    }
+
+    .dept-table tr:hover td { background: rgba(108,99,255,0.05); }
+
+    .bloc-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-G  { background: rgba(76,175,148,0.15); color: var(--g); }
+    .badge-C  { background: rgba(74,144,217,0.15); color: var(--c); }
+    .badge-D  { background: rgba(62,125,232,0.15); color: var(--d); }
+    .badge-ED { background: rgba(224, 92, 92,0.15); color: var(--ed); }
+
+    /* ═══════════ MINI BARS ═══════════ */
+    .mini-bar-wrap {
+      display: flex;
+      gap: 2px;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      min-width: 80px;
+    }
+
+    .mini-bar-seg {
+      height: 100%;
+      transition: width 0.8s ease;
+    }
+
+    /* ═══════════ CONCORDANCE CIRCLE ═══════════ */
+    .conc-circle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .conc-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 52px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #6c63ff, #a89fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+
+    .conc-label {
+      font-size: 13px;
+      color: var(--text2);
+      margin-top: 6px;
+    }
+
+    /* ═══════════ FOOTER ═══════════ */
+    footer {
+      position: relative;
+      z-index: 1;
+      padding: 24px 48px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text3);
+    }
+
+    /* ═══════════ SCROLL ANIMATION ═══════════ */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ═══════════ RESPONSIVE ═══════════ */
+    @media (max-width: 1100px) {
+      .grid-4 { grid-template-columns: 1fr 1fr; }
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 700px) {
+      header, main, footer { padding-left: 20px; padding-right: 20px; }
+      .grid-2, .grid-4 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════ HEADER ════════════════════ -->
+<header>
+  <div class="header-badge">
+    <span>MSPR1 — Region AURA — Analyse Predictive</span>
+  </div>
+  <h1>Prédictions Électorales AURA<br>2026 · 2027 · 2028</h1>
+  <p class="header-subtitle">4 modèles de Machine Learning · 4 094 communes · Région Auvergne-Rhône-Alpes</p>
+  <div class="header-meta">
+    <div class="meta-chip">📅 <strong>Référence</strong> Élections 2022</div>
+    <div class="meta-chip">🎯 <strong>Horizon</strong> +1, +2, +3 ans</div>
+    <div class="meta-chip">🤖 <strong>Modèles</strong> RF · ET · KNN · LogReg</div>
+    <div class="meta-chip">📊 <strong>Source ETL</strong> Dataiku</div>
+  </div>
+</header>
+
+<!-- ════════════════════ MAIN ════════════════════ -->
+<main>
+
+  <!-- ── TIMELINE ── -->
+  <div class="section-title">Horizon temporel des prédictions</div>
+  <div class="timeline fade-in" id="timeline-wrap">
+    <div class="tl-node">
+      <div class="tl-dot active"></div>
+      <div class="tl-label active">2022</div>
+      <div class="tl-sublabel">Référence électorale</div>
+    </div>
+    <div class="tl-line"></div>
+    <div class="tl-node">
+      <div class="tl-dot future"></div>
+      <div class="tl-label future">2026</div>
+      <div class="tl-sublabel">+1 an — projection</div>
+    </div>
+    <div class="tl-line"></div>
+    <div class="tl-node">
+      <div class="tl-dot future"></div>
+      <div class="tl-label future">2027</div>
+      <div class="tl-sublabel">+2 ans — prédiction ML</div>
+    </div>
+    <div class="tl-line"></div>
+    <div class="tl-node">
+      <div class="tl-dot future"></div>
+      <div class="tl-label future">2028</div>
+      <div class="tl-sublabel">+3 ans — extrapolation</div>
+    </div>
+  </div>
+
+  <!-- ── KPIs ── -->
+  <div class="section-title">Vue d'ensemble — Random Forest 2027</div>
+  <div class="grid-4 fade-in" id="kpi-section">
+    <div class="kpi-card" id="kpi-ed">
+      <div class="glow-dot" style="background:var(--ed)"></div>
+      <div class="kpi-label">Extrême Droite</div>
+      <div class="kpi-value bloc-ED" id="kv-ed">—</div>
+      <div class="kpi-sub" id="kv-ed-pct">communes prédites ED</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill bg-ED" id="kb-ed" style="width:0%"></div></div>
+    </div>
+    <div class="kpi-card" id="kpi-c">
+      <div class="glow-dot" style="background:var(--c)"></div>
+      <div class="kpi-label">Centre</div>
+      <div class="kpi-value bloc-C" id="kv-c">—</div>
+      <div class="kpi-sub" id="kv-c-pct">communes prédites Centre</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill bg-C" id="kb-c" style="width:0%"></div></div>
+    </div>
+    <div class="kpi-card" id="kpi-g">
+      <div class="glow-dot" style="background:var(--g)"></div>
+      <div class="kpi-label">Gauche</div>
+      <div class="kpi-value bloc-G" id="kv-g">—</div>
+      <div class="kpi-sub" id="kv-g-pct">communes prédites Gauche</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill bg-G" id="kb-g" style="width:0%"></div></div>
+    </div>
+    <div class="kpi-card" id="kpi-d">
+      <div class="glow-dot" style="background:var(--d)"></div>
+      <div class="kpi-label">Droite</div>
+      <div class="kpi-value bloc-D" id="kv-d">—</div>
+      <div class="kpi-sub" id="kv-d-pct">communes prédites Droite</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill bg-D" id="kb-d" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- ── EVOLUTION TEMPORELLE ── -->
+  <div class="section-title">Évolution temporelle 2022–2028</div>
+  <div class="grid-2 fade-in">
+
+    <div class="card">
+      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">
+        Répartition des communes par bloc (courbe temporelle)
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:16px">
+        Nombre de communes gagnées par chaque bloc — 2022, 2026, 2027, 2028
+      </div>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="chart-line"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">
+        Carte de chaleur — Variations par horizon
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:16px">
+        Évolution relative vs. 2022 (en points de pourcentage)
+      </div>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="chart-heatmap"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── PROBABILITES ── -->
+  <div class="section-title">Distribution des probabilités (Random Forest)</div>
+  <div class="grid-2 fade-in">
+
+    <div class="card">
+      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">
+        Diagramme de probabilité par bloc
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:16px">
+        Distribution des scores de confiance du modèle Random Forest pour chaque bloc politique
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot bg-G"></div>Gauche</div>
+        <div class="legend-item"><div class="legend-dot bg-C"></div>Centre</div>
+        <div class="legend-item"><div class="legend-dot bg-ED"></div>Extrême Droite</div>
+      </div>
+      <div class="chart-wrap" style="height:240px">
+        <canvas id="chart-proba"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">
+        Comparaison des 4 modèles (2027)
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:16px">
+        Nombre de communes prédites par bloc selon chaque modèle de ML
+      </div>
+
+      <div class="tabs" id="model-tabs">
+        <button class="tab active" data-model="random_forest" id="tab-rf">Random Forest</button>
+        <button class="tab" data-model="extra_trees" id="tab-et">Extra Trees</button>
+        <button class="tab" data-model="knn" id="tab-knn">KNN</button>
+        <button class="tab" data-model="logistic" id="tab-log">Log. Reg.</button>
+      </div>
+
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="chart-model"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── DEPT + CONCORDANCE ── -->
+  <div class="section-title">Analyse par département &amp; concordance</div>
+  <div class="grid-3 fade-in">
+
+    <div class="card">
+      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:16px">
+        Résultats par département (Random Forest 2027)
+      </div>
+      <table class="dept-table" id="dept-table">
+        <thead>
+          <tr>
+            <th>Département</th>
+            <th>Communes</th>
+            <th>Répartition</th>
+            <th>Dominant</th>
+          </tr>
+        </thead>
+        <tbody id="dept-tbody">
+          <tr><td colspan="4" style="color:var(--text3);text-align:center;padding:20px">Chargement…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+      <div class="conc-circle">
+        <div class="conc-value" id="conc-pct">—</div>
+        <div class="conc-label">des communes<br>ont le même résultat<br>dans les 4 modèles</div>
+      </div>
+      <div style="margin-top:20px;font-size:12px;color:var(--text3);line-height:1.6">
+        Concordance inter-modèle<br>Random Forest · Extra Trees · KNN · Log. Reg.
+      </div>
+      <div class="chart-wrap" style="height:120px;margin-top:16px;width:100%">
+        <canvas id="chart-conc"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:16px">
+        Communes les plus fortement prédites ED
+      </div>
+      <div id="top-ed-list" style="display:flex;flex-direction:column;gap:8px">
+        <div style="color:var(--text3);font-size:13px">Chargement…</div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  <div>MSPR1 — Analyse Prédictive Électorale · Région AURA · ETL via Dataiku</div>
+  <div id="footer-date" style="color:var(--text3)"></div>
+</footer>
+
+<!-- ════════════════════ SCRIPT ════════════════════ -->
+<script>
+// ─── COLORS ────────────────────────────────────────────────
+const COLORS = {
+  G:  '#4caf94',
+  C:  '#4a90d9',
+  D:  '#3e7de8',
+  ED: '#e05c5c',
+};
+const COLORS_BG = {
+  G:  'rgba(76,175,148,0.15)',
+  C:  'rgba(74,144,217,0.15)',
+  D:  'rgba(62,125,232,0.15)',
+  ED: 'rgba(224,92,92,0.15)',
+};
+const BLOC_LABELS = { G: 'Gauche', C: 'Centre', D: 'Droite', ED: 'Extrême Droite' };
+const DEPT_NAMES = {
+  "01":"Ain","03":"Allier","07":"Ardèche","15":"Cantal",
+  "26":"Drôme","38":"Isère","42":"Loire","43":"Haute-Loire",
+  "63":"Puy-de-Dôme","69":"Rhône","73":"Savoie","74":"Haute-Savoie"
+};
+
+// ─── Chart.js DEFAULTS ─────────────────────────────────────
+Chart.defaults.color = '#8892b0';
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 11;
+
+// ─── DATA LOADING (données embarquées) ──────────────────────
+const __EMBEDDED_DATA__ = {"meta":{"region":"AURA","total_communes":4094,"prediction_year":2027,"models":["random_forest","extra_trees","knn","logistic"]},"evolution_temporelle":{"2022":{"C":2034,"ED":1638,"G":420,"D":2},"2026":{"D":1,"C":1651,"G":631,"ED":1809},"2027":{"G":843,"C":1269,"D":1,"ED":1981},"2028":{"D":1,"C":1250,"ED":1961,"G":864}},"repartition_par_modele":{"random_forest":{"G":843,"C":1269,"D":1,"ED":1981},"extra_trees":{"G":902,"C":1156,"D":13,"ED":2023},"knn":{"G":206,"C":2135,"D":0,"ED":1753},"logistic":{"G":867,"C":1357,"D":65,"ED":1805}},"distribution_probabilites":{"C":{"counts":[0,5,66,431,593,675,597,377,202,136,130,152,133,83,106,81,94,93,139,1],"edges":[0.0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0]},"ED":{"counts":[57,386,283,320,270,301,242,262,295,327,305,304,227,233,267,15,0,0,0,0],"edges":[0.0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0]},"G":{"counts":[480,1009,642,395,309,181,171,124,131,135,93,91,73,87,57,69,46,1,0,0],"edges":[0.0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0]},"D":{"counts":[4091,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],"edges":[0.0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0]}},"departements":{"01":{"total":408,"G":55,"C":97,"D":0,"ED":256,"dominant":"ED"},"03":{"total":317,"G":42,"C":10,"D":0,"ED":265,"dominant":"ED"},"07":{"total":338,"G":160,"C":30,"D":0,"ED":148,"dominant":"G"},"15":{"total":247,"G":5,"C":197,"D":0,"ED":45,"dominant":"C"},"26":{"total":367,"G":191,"C":72,"D":0,"ED":104,"dominant":"G"},"38":{"total":521,"G":74,"C":208,"D":0,"ED":239,"dominant":"ED"},"42":{"total":326,"G":41,"C":54,"D":0,"ED":231,"dominant":"ED"},"43":{"total":257,"G":67,"C":25,"D":1,"ED":164,"dominant":"ED"},"63":{"total":467,"G":85,"C":91,"D":0,"ED":291,"dominant":"ED"},"69":{"total":280,"G":31,"C":151,"D":0,"ED":98,"dominant":"C"},"73":{"total":285,"G":77,"C":118,"D":0,"ED":90,"dominant":"C"},"74":{"total":281,"G":15,"C":216,"D":0,"ED":50,"dominant":"C"}},"dept_names":{"01":"Ain","03":"Allier","07":"Ardèche","15":"Cantal","26":"Drôme","38":"Isère","42":"Loire","43":"Haute-Loire","63":"Puy-de-Dôme","69":"Rhône","73":"Savoie","74":"Haute-Savoie"},"concordance_modeles":{"agree_all_models":2103,"total":4094,"pct":51.4},"top_ed_communes":[{"Code_geo":38291,"commune_name":"Pajay","prediction":"ED","proba_C":0.1782573987506869,"proba_ED":0.7555031738806807,"proba_G":0.0662394273686321,"proba_D":0.0},{"Code_geo":7265,"commune_name":"Saint-Marcel-l�s-Annonay","prediction":"ED","proba_C":0.1769147450604065,"proba_ED":0.7551286894849599,"proba_G":0.0679565654546333,"proba_D":0.0},{"Code_geo":1026,"commune_name":"B�g�-le-Ch�tel","prediction":"ED","proba_C":0.175440383554086,"proba_ED":0.7544156448956061,"proba_G":0.0701439715503077,"proba_D":0.0},{"Code_geo":1403,"commune_name":"Serri�res-de-Briord","prediction":"ED","proba_C":0.1783372464722979,"proba_ED":0.7525511551914306,"proba_G":0.0691115983362711,"proba_D":0.0},{"Code_geo":3063,"commune_name":"Chassenard","prediction":"ED","proba_C":0.1805309290099665,"proba_ED":0.7525485404033903,"proba_G":0.0669205305866431,"proba_D":0.0},{"Code_geo":42145,"commune_name":"Montagny","prediction":"ED","proba_C":0.1807677098730967,"proba_ED":0.75231175954026,"proba_G":0.0669205305866431,"proba_D":0.0},{"Code_geo":42231,"commune_name":"Saint-Germain-Lespinasse","prediction":"ED","proba_C":0.1807677098730967,"proba_ED":0.75231175954026,"proba_G":0.0669205305866431,"proba_D":0.0},{"Code_geo":26155,"commune_name":"Lapeyrouse-Mornay","prediction":"ED","proba_C":0.1765462609433528,"proba_ED":0.7522570425795025,"proba_G":0.0711966964771445,"proba_D":0.0},{"Code_geo":73130,"commune_name":"Grignon","prediction":"ED","proba_C":0.1778986529210645,"proba_ED":0.7517543440643395,"proba_G":0.0703470030145958,"proba_D":0.0},{"Code_geo":1323,"commune_name":"Reyssouze","prediction":"ED","proba_C":0.1810519500728062,"proba_ED":0.7516649280147644,"proba_G":0.0672831219124292,"proba_D":0.0}],"top_g_communes":[{"Code_geo":73012,"commune_name":"Albiez-le-Jeune","prediction":"G","proba_C":0.1047163095884936,"proba_ED":0.04466907652948,"proba_G":0.8506146138820262,"proba_D":0.0},{"Code_geo":69256,"commune_name":"Vaulx-en-Velin","prediction":"G","proba_C":0.111291604701276,"proba_ED":0.0439197405396819,"proba_G":0.8447886547590419,"proba_D":0.0},{"Code_geo":7213,"commune_name":"Saint-Andr�-Lachamp","prediction":"G","proba_C":0.1081177840664208,"proba_ED":0.0479834075564293,"proba_G":0.8438988083771498,"proba_D":0.0},{"Code_geo":7208,"commune_name":"Saint-And�ol-de-Berg","prediction":"G","proba_C":0.1101505438048703,"proba_ED":0.0487278131278331,"proba_G":0.8411216430672965,"proba_D":0.0},{"Code_geo":73192,"commune_name":"Le Noyer","prediction":"G","proba_C":0.1110433837408682,"proba_ED":0.0495032938526386,"proba_G":0.8394533224064931,"proba_D":0.0},{"Code_geo":69091,"commune_name":"Givors","prediction":"G","proba_C":0.0852470397712268,"proba_ED":0.0757462470217824,"proba_G":0.8390067132069905,"proba_D":0.0},{"Code_geo":73092,"commune_name":"Corbel","prediction":"G","proba_C":0.1118718349271438,"proba_ED":0.0491662749345133,"proba_G":0.8389618901383425,"proba_D":0.0},{"Code_geo":7277,"commune_name":"Saint-Michel-de-Boulogne","prediction":"G","proba_C":0.112894811339433,"proba_ED":0.0500980899087981,"proba_G":0.8370070987517687,"proba_D":0.0},{"Code_geo":7141,"commune_name":"Lentill�res","prediction":"G","proba_C":0.1171081688293502,"proba_ED":0.0483300743978928,"proba_G":0.8345617567727571,"proba_D":0.0},{"Code_geo":7263,"commune_name":"Saint-Laurent-sous-Coiron","prediction":"G","proba_C":0.1154118590624249,"proba_ED":0.0514712106345777,"proba_G":0.8331169303029973,"proba_D":0.0}]};
+async function loadData() {
+  return __EMBEDDED_DATA__;
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+async function init() {
+  const data = await loadData();
+  if (!data) {
+    document.querySelector('main').innerHTML = '<div style="color:#e05c5c;padding:40px;text-align:center;font-size:18px">⚠️ Impossible de charger data/dashboard_data.json.<br><small>Assurez-vous d\'ouvrir ce fichier via un serveur HTTP local.</small></div>';
+    return;
+  }
+
+  buildKPIs(data);
+  buildLineChart(data);
+  buildHeatmap(data);
+  buildProbaChart(data);
+  buildModelChart(data, 'random_forest');
+  buildDeptTable(data);
+  buildTopED(data);
+  buildConcordance(data);
+  setupModelTabs(data);
+
+  document.getElementById('footer-date').textContent =
+    'Généré le ' + new Date().toLocaleDateString('fr-FR', {day:'2-digit',month:'long',year:'numeric'});
+
+  // Scroll animations
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+}
+
+// ─── KPIs ─────────────────────────────────────────────────
+function buildKPIs(data) {
+  const rf = data.repartition_par_modele.random_forest;
+  const total = 4094;
+  ['ED', 'C', 'G', 'D'].forEach(b => {
+    const n = rf[b] || 0;
+    const pct = (n / total * 100).toFixed(1);
+    const el = document.getElementById('kv-' + b.toLowerCase());
+    if (el) animateCounter(el, n);
+    const ps = document.getElementById('kv-' + b.toLowerCase() + '-pct');
+    if (ps) ps.textContent = `${pct}% · ${n} communes`;
+    const bar = document.getElementById('kb-' + b.toLowerCase());
+    if (bar) setTimeout(() => bar.style.width = pct + '%', 300);
+  });
+}
+
+function animateCounter(el, target) {
+  let start = 0;
+  const step = Math.ceil(target / 40);
+  const timer = setInterval(() => {
+    start = Math.min(start + step, target);
+    el.textContent = start.toLocaleString('fr-FR');
+    if (start >= target) clearInterval(timer);
+  }, 30);
+}
+
+// ─── LINE CHART ────────────────────────────────────────────
+function buildLineChart(data) {
+  const ev = data.evolution_temporelle;
+  const years = ['2022', '2026', '2027', '2028'];
+  const blocs = ['G', 'C', 'D', 'ED'];
+
+  const datasets = blocs.map(b => ({
+    label: BLOC_LABELS[b],
+    data: years.map(y => ev[y]?.[b] ?? 0),
+    borderColor: COLORS[b],
+    backgroundColor: COLORS_BG[b],
+    borderWidth: 2.5,
+    pointRadius: 5,
+    pointBackgroundColor: COLORS[b],
+    pointBorderColor: '#111520',
+    pointBorderWidth: 2,
+    tension: 0.4,
+    fill: false,
+    borderDash: [0, 0],
+  }));
+
+  // Ligne pointillée pour les projections (2026, 2027, 2028)
+  datasets.forEach(ds => {
+    ds.segment = {
+      borderDash: ctx => ctx.p0DataIndex >= 0 && ctx.p0DataIndex >= 1 ? [6, 3] : [],
+    };
+  });
+
+  new Chart(document.getElementById('chart-line'), {
+    type: 'line',
+    data: { labels: years, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { usePointStyle: true, pointStyleWidth: 10, padding: 16 } },
+        tooltip: {
+          backgroundColor: '#1c2235',
+          borderColor: '#252d42',
+          borderWidth: 1,
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('fr-FR')} communes`,
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color: '#1c2235' }, ticks: { color: '#8892b0' } },
+        y: { grid: { color: '#1c2235' }, ticks: { color: '#8892b0', callback: v => v.toLocaleString('fr-FR') } },
+      },
+      animation: { duration: 1200, easing: 'easeOutQuart' },
+    }
+  });
+}
+
+// ─── HEATMAP (bar chart grouped) ──────────────────────────
+function buildHeatmap(data) {
+  const ev = data.evolution_temporelle;
+  const blocs = ['G', 'C', 'D', 'ED'];
+  const baseYear = '2022';
+  const compareYears = ['2026', '2027', '2028'];
+
+  // Delta en points de % vs 2022
+  const total = 4094;
+  const base = {};
+  blocs.forEach(b => base[b] = (ev[baseYear]?.[b] ?? 0) / total * 100);
+
+  const datasets = compareYears.map(y => ({
+    label: y,
+    data: blocs.map(b => {
+      const cur = (ev[y]?.[b] ?? 0) / total * 100;
+      return parseFloat((cur - base[b]).toFixed(2));
+    }),
+    backgroundColor: y === '2026' ? 'rgba(108,99,255,0.5)' : y === '2027' ? 'rgba(108,99,255,0.75)' : 'rgba(108,99,255,0.95)',
+    borderRadius: 4,
+  }));
+
+  new Chart(document.getElementById('chart-heatmap'), {
+    type: 'bar',
+    data: { labels: blocs.map(b => BLOC_LABELS[b]), datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { usePointStyle: true, padding: 14 } },
+        tooltip: {
+          backgroundColor: '#1c2235',
+          borderColor: '#252d42',
+          borderWidth: 1,
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y > 0 ? '+' : ''}${ctx.parsed.y} pp vs 2022`,
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color: '#1c2235' } },
+        y: {
+          grid: { color: '#1c2235' },
+          ticks: { callback: v => (v > 0 ? '+' : '') + v + ' pp' },
+          title: { display: true, text: 'Variation (points de %) vs 2022', color: '#8892b0' }
+        },
+      },
+      animation: { duration: 1000 },
+    }
+  });
+}
+
+// ─── PROBA CHART ───────────────────────────────────────────
+function buildProbaChart(data) {
+  const dist = data.distribution_probabilites;
+  const blocs = ['G', 'C', 'ED'];
+
+  const datasets = blocs.map(b => {
+    const d = dist[b];
+    if (!d) return null;
+    const labels = d.edges.slice(0, -1).map((v, i) => ((v + d.edges[i+1])/2).toFixed(2));
+    return {
+      label: BLOC_LABELS[b],
+      data: d.counts,
+      borderColor: COLORS[b],
+      backgroundColor: COLORS_BG[b],
+      borderWidth: 2,
+      pointRadius: 0,
+      tension: 0.4,
+      fill: true,
+    };
+  }).filter(Boolean);
+
+  const labels = dist['G']?.edges?.slice(0, -1).map((v, i) => ((v + dist['G'].edges[i+1])/2).toFixed(2)) ?? [];
+
+  new Chart(document.getElementById('chart-proba'), {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1c2235',
+          borderColor: '#252d42',
+          borderWidth: 1,
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#1c2235' },
+          title: { display: true, text: 'Probabilité prédite', color: '#8892b0' }
+        },
+        y: {
+          grid: { color: '#1c2235' },
+          title: { display: true, text: 'Nombre de communes', color: '#8892b0' }
+        },
+      },
+      animation: { duration: 1200 },
+    }
+  });
+}
+
+// ─── MODEL CHART ───────────────────────────────────────────
+let modelChart = null;
+
+function buildModelChart(data, modelKey) {
+  const blocs = ['G', 'C', 'D', 'ED'];
+  const counts = data.repartition_par_modele[modelKey] || {};
+  const vals = blocs.map(b => counts[b] ?? 0);
+
+  if (modelChart) { modelChart.destroy(); }
+
+  modelChart = new Chart(document.getElementById('chart-model'), {
+    type: 'doughnut',
+    data: {
+      labels: blocs.map(b => BLOC_LABELS[b]),
+      datasets: [{
+        data: vals,
+        backgroundColor: blocs.map(b => COLORS[b]),
+        borderColor: '#1c2235',
+        borderWidth: 3,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 14 } },
+        tooltip: {
+          backgroundColor: '#1c2235',
+          borderColor: '#252d42',
+          borderWidth: 1,
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString('fr-FR')} communes (${(ctx.parsed/4094*100).toFixed(1)}%)`
+          }
+        }
+      },
+      animation: { animateScale: true, duration: 800 },
+    }
+  });
+}
+
+function setupModelTabs(data) {
+  document.querySelectorAll('#model-tabs .tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#model-tabs .tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      buildModelChart(data, tab.dataset.model);
+    });
+  });
+}
+
+// ─── DEPT TABLE ────────────────────────────────────────────
+function buildDeptTable(data) {
+  const depts = data.departements;
+  const names = data.dept_names || DEPT_NAMES;
+  const tbody = document.getElementById('dept-tbody');
+
+  const rows = Object.entries(depts)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([code, d]) => {
+      const total = d.total || 1;
+      const name = names[code] || code;
+      const segs = ['G', 'C', 'D', 'ED'].map(b => {
+        const pct = ((d[b] || 0) / total * 100).toFixed(1);
+        return `<div class="mini-bar-seg bg-${b}" style="width:${pct}%"></div>`;
+      }).join('');
+      return `
+        <tr>
+          <td><strong style="color:var(--text)">${name}</strong><br><span style="font-size:11px;color:var(--text3)">${code}</span></td>
+          <td>${d.total}</td>
+          <td><div class="mini-bar-wrap">${segs}</div></td>
+          <td><span class="bloc-badge badge-${d.dominant}">${d.dominant}</span></td>
+        </tr>`;
+    }).join('');
+
+  tbody.innerHTML = rows;
+}
+
+// ─── TOP ED COMMUNES ────────────────────────────────────────
+function buildTopED(data) {
+  const list = document.getElementById('top-ed-list');
+  const communes = data.top_ed_communes || [];
+
+  list.innerHTML = communes.slice(0, 8).map((c, i) => {
+    const pct = ((c.proba_ED || 0) * 100).toFixed(1);
+    return `
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:11px;color:var(--text3);width:16px;text-align:right">${i+1}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;color:var(--text);font-weight:500">${c.commune_name || c.Code_geo}</div>
+          <div style="height:4px;background:var(--border);border-radius:2px;margin-top:4px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:var(--ed);border-radius:2px;transition:width 1s ease"></div>
+          </div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--ed)">${pct}%</div>
+      </div>`;
+  }).join('');
+}
+
+// ─── CONCORDANCE ────────────────────────────────────────────
+function buildConcordance(data) {
+  const conc = data.concordance_modeles;
+  const pctEl = document.getElementById('conc-pct');
+  if (pctEl) pctEl.textContent = conc.pct + '%';
+
+  new Chart(document.getElementById('chart-conc'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Concordance', 'Désaccord'],
+      datasets: [{
+        data: [conc.agree_all_models, conc.total - conc.agree_all_models],
+        backgroundColor: ['#6c63ff', '#252d42'],
+        borderColor: '#1c2235',
+        borderWidth: 3,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '75%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1c2235',
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString('fr-FR')} communes`
+          }
+        }
+      },
+      animation: { animateScale: true, duration: 1000 },
+    }
+  });
+}
+
+// ─── RUN ───────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,474 @@
+{
+  "annotations": { "list": [] },
+  "description": "Prédictions électorales région AURA — Random Forest, Extra Trees, KNN, Régression Logistique",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Communes AURA",
+      "gridPos": { "h": 4, "w": 5, "x": 0, "y": 0 },
+      "datasource": { "type": "postgres", "uid": "elections-postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT COUNT(DISTINCT code_geo) AS value FROM predictions WHERE model_name = 'random_forest'",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "#6c63ff" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#6c63ff", "value": null }] },
+          "mappings": []
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Extrême Droite 2027",
+      "gridPos": { "h": 4, "w": 5, "x": 5, "y": 0 },
+      "datasource": { "type": "postgres", "uid": "elections-postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT COUNT(*) AS value FROM predictions WHERE model_name = 'random_forest' AND prediction = 'ED'",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "#e05c5c" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#e05c5c", "value": null }] },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Centre 2027",
+      "gridPos": { "h": 4, "w": 4, "x": 10, "y": 0 },
+      "datasource": { "type": "postgres", "uid": "elections-postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT COUNT(*) AS value FROM predictions WHERE model_name = 'random_forest' AND prediction = 'C'",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "#4a90d9" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#4a90d9", "value": null }] },
+          "mappings": []
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Gauche 2027",
+      "gridPos": { "h": 4, "w": 4, "x": 14, "y": 0 },
+      "datasource": { "type": "postgres", "uid": "elections-postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT COUNT(*) AS value FROM predictions WHERE model_name = 'random_forest' AND prediction = 'G'",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "#4caf94" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#4caf94", "value": null }] },
+          "mappings": []
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Concordance inter-modèles",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "postgres", "uid": "elections-postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT ROUND(100.0 * SUM(CASE WHEN agree THEN 1 ELSE 0 END) / COUNT(*), 1) AS value FROM (SELECT code_geo, COUNT(DISTINCT prediction) = 1 AS agree FROM predictions GROUP BY code_geo) t",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "#f5c842" },
+          "unit": "percent",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#f5c842", "value": null }] },
+          "mappings": []
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 10,
+      "type": "text",
+      "title": "",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 4 },
+      "options": {
+        "content": "## Courbes temporelles — Évolution 2022–2028",
+        "mode": "markdown"
+      },
+      "transparent": true
+    },
+
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Évolution du nombre de communes par bloc (2022 → 2028)",
+      "description": "2022 = résultats réels · 2026/2027/2028 = prédictions Random Forest (horizons +1/+2/+3 ans)",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 5 },
+      "datasource": { "type": "postgres", "uid": "elections-postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT make_timestamp(annee, 7, 1, 0, 0, 0) AS \"time\", MAX(CASE WHEN bloc = 'G'  THEN communes END) AS \"Gauche\", MAX(CASE WHEN bloc = 'C'  THEN communes END) AS \"Centre\", MAX(CASE WHEN bloc = 'D'  THEN communes END) AS \"Droite\", MAX(CASE WHEN bloc = 'ED' THEN communes END) AS \"Extrême Droite\" FROM evolution_blocs GROUP BY annee ORDER BY annee",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "lines": true,
+        "points": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 3,
+            "pointSize": 8,
+            "lineInterpolation": "smooth",
+            "spanNulls": true,
+            "fillOpacity": 10
+          },
+          "color": { "mode": "palette-classic" },
+          "unit": "short"
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Gauche"          }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#4caf94" } }] },
+          { "matcher": { "id": "byName", "options": "Centre"          }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#4a90d9" } }] },
+          { "matcher": { "id": "byName", "options": "Droite"          }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#3e7de8" } }] },
+          { "matcher": { "id": "byName", "options": "Extrême Droite"  }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#e05c5c" } }] }
+        ]
+      }
+    },
+
+    {
+      "id": 20,
+      "type": "text",
+      "title": "",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 },
+      "options": {
+        "content": "## Carte de chaleur — Variations relatives vs 2022",
+        "mode": "markdown"
+      },
+      "transparent": true
+    },
+
+    {
+      "id": 7,
+      "type": "barchart",
+      "title": "Variations en points de % vs 2022 — par bloc et horizon temporel",
+      "description": "Delta = (communes_horizon / total) - (communes_2022 / total). Positif = gain de communes, négatif = perte.",
+      "gridPos": { "h": 10, "w": 14, "x": 0, "y": 16 },
+      "datasource": { "type": "postgres", "uid": "elections-postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT CASE bloc WHEN 'G' THEN 'Gauche' WHEN 'C' THEN 'Centre' WHEN 'D' THEN 'Droite' WHEN 'ED' THEN 'Extrême Droite' END AS \"Bloc\", MAX(CASE WHEN annee = 2026 THEN delta_pct END) AS \"+1 an (2026)\", MAX(CASE WHEN annee = 2027 THEN delta_pct END) AS \"+2 ans (2027)\", MAX(CASE WHEN annee = 2028 THEN delta_pct END) AS \"+3 ans (2028)\" FROM variations_2022 GROUP BY bloc ORDER BY bloc",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "auto",
+        "groupWidth": 0.7,
+        "barWidth": 0.9,
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "xTickLabelRotation": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "fillOpacity": 80 },
+          "unit": "percent",
+          "decimals": 1
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "+1 an (2026)"  }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "rgba(108,99,255,0.5)"  } }] },
+          { "matcher": { "id": "byName", "options": "+2 ans (2027)" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "rgba(108,99,255,0.75)" } }] },
+          { "matcher": { "id": "byName", "options": "+3 ans (2028)" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "rgba(108,99,255,0.95)" } }] }
+        ]
+      }
+    },
+
+    {
+      "id": 8,
+      "type": "barchart",
+      "title": "Répartition des communes 2027 — comparaison 4 modèles",
+      "gridPos": { "h": 10, "w": 10, "x": 14, "y": 16 },
+      "datasource": { "type": "postgres", "uid": "elections-postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT CASE model_name WHEN 'random_forest' THEN 'Random Forest' WHEN 'extra_trees' THEN 'Extra Trees' WHEN 'knn' THEN 'KNN' WHEN 'logistic' THEN 'Rég. Logistique' END AS \"Modèle\", COUNT(*) FILTER (WHERE prediction = 'G')  AS \"Gauche\", COUNT(*) FILTER (WHERE prediction = 'C')  AS \"Centre\", COUNT(*) FILTER (WHERE prediction = 'D')  AS \"Droite\", COUNT(*) FILTER (WHERE prediction = 'ED') AS \"Extrême Droite\" FROM predictions GROUP BY model_name ORDER BY model_name",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "groupWidth": 0.7,
+        "barWidth": 0.9,
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "stacking": "normal"
+      },
+      "fieldConfig": {
+        "defaults": { "custom": { "fillOpacity": 80 }, "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Gauche"         }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#4caf94" } }] },
+          { "matcher": { "id": "byName", "options": "Centre"         }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#4a90d9" } }] },
+          { "matcher": { "id": "byName", "options": "Droite"         }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#3e7de8" } }] },
+          { "matcher": { "id": "byName", "options": "Extrême Droite" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#e05c5c" } }] }
+        ]
+      }
+    },
+
+    {
+      "id": 30,
+      "type": "text",
+      "title": "",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 },
+      "options": {
+        "content": "## Diagrammes de probabilité — Distribution des scores de confiance (Random Forest)",
+        "mode": "markdown"
+      },
+      "transparent": true
+    },
+
+    {
+      "id": 9,
+      "type": "barchart",
+      "title": "Distribution des probabilités — Extrême Droite",
+      "description": "Score de confiance du modèle Random Forest pour chaque commune (0 = très incertain, 1 = très certain). Une commune est prédite ED quand sa probabilité ED est la plus haute.",
+      "gridPos": { "h": 10, "w": 8, "x": 0, "y": 27 },
+      "datasource": { "type": "postgres", "uid": "elections-postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT ROUND(prob_min::numeric * 100)::text || '%' AS \"Probabilité\", communes AS \"Communes\" FROM proba_distribution WHERE bloc = 'ED' ORDER BY prob_min",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "auto",
+        "groupWidth": 0.97,
+        "barWidth": 0.97,
+        "tooltip": { "mode": "single", "sort": "none" },
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "xTickLabelRotation": -45
+      },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "fixed", "fixedColor": "#e05c5c" }, "custom": { "fillOpacity": 75 }, "unit": "short" },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 11,
+      "type": "barchart",
+      "title": "Distribution des probabilités — Gauche",
+      "description": "Score de confiance du modèle Random Forest pour le bloc Gauche.",
+      "gridPos": { "h": 10, "w": 8, "x": 8, "y": 27 },
+      "datasource": { "type": "postgres", "uid": "elections-postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT ROUND(prob_min::numeric * 100)::text || '%' AS \"Probabilité\", communes AS \"Communes\" FROM proba_distribution WHERE bloc = 'G' ORDER BY prob_min",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "auto",
+        "groupWidth": 0.97,
+        "barWidth": 0.97,
+        "tooltip": { "mode": "single", "sort": "none" },
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "xTickLabelRotation": -45
+      },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "fixed", "fixedColor": "#4caf94" }, "custom": { "fillOpacity": 75 }, "unit": "short" },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 12,
+      "type": "barchart",
+      "title": "Distribution des probabilités — Centre",
+      "description": "Score de confiance du modèle Random Forest pour le bloc Centre.",
+      "gridPos": { "h": 10, "w": 8, "x": 16, "y": 27 },
+      "datasource": { "type": "postgres", "uid": "elections-postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT ROUND(prob_min::numeric * 100)::text || '%' AS \"Probabilité\", communes AS \"Communes\" FROM proba_distribution WHERE bloc = 'C' ORDER BY prob_min",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "auto",
+        "groupWidth": 0.97,
+        "barWidth": 0.97,
+        "tooltip": { "mode": "single", "sort": "none" },
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "xTickLabelRotation": -45
+      },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "fixed", "fixedColor": "#4a90d9" }, "custom": { "fillOpacity": 75 }, "unit": "short" },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 40,
+      "type": "text",
+      "title": "",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 37 },
+      "options": {
+        "content": "## Analyse géographique — Résultats par département",
+        "mode": "markdown"
+      },
+      "transparent": true
+    },
+
+    {
+      "id": 13,
+      "type": "table",
+      "title": "Résultats par département (Random Forest 2027)",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 38 },
+      "datasource": { "type": "postgres", "uid": "elections-postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT dept_code AS \"Dép.\", COUNT(*) AS \"Communes\", COUNT(*) FILTER (WHERE prediction = 'ED') AS \"ED\", COUNT(*) FILTER (WHERE prediction = 'C')  AS \"Centre\", COUNT(*) FILTER (WHERE prediction = 'G')  AS \"Gauche\", COUNT(*) FILTER (WHERE prediction = 'D')  AS \"Droite\", MODE() WITHIN GROUP (ORDER BY prediction) AS \"Dominant\", ROUND(100.0 * COUNT(*) FILTER (WHERE prediction = 'ED') / COUNT(*), 1) AS \"% ED\" FROM predictions WHERE model_name = 'random_forest' GROUP BY dept_code ORDER BY dept_code",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "% ED" }],
+        "footer": { "show": false }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "% ED" },
+            "properties": [
+              { "id": "custom.displayMode", "value": "color-background" },
+              { "id": "color", "value": { "mode": "continuous-RdYlGn" } },
+              { "id": "thresholds", "value": { "mode": "percentage", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 80 }] } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Dominant" },
+            "properties": [
+              { "id": "custom.displayMode", "value": "color-text" },
+              {
+                "id": "mappings",
+                "value": [
+                  { "type": "value", "options": { "ED": { "color": "#e05c5c", "index": 0 } } },
+                  { "type": "value", "options": { "C":  { "color": "#4a90d9", "index": 1 } } },
+                  { "type": "value", "options": { "G":  { "color": "#4caf94", "index": 2 } } },
+                  { "type": "value", "options": { "D":  { "color": "#3e7de8", "index": 3 } } }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+
+  ],
+
+  "refresh": false,
+  "schemaVersion": 38,
+  "tags": ["elections", "aura", "predictions", "ml"],
+  "time": { "from": "2021-01-01T00:00:00.000Z", "to": "2029-01-01T00:00:00.000Z" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Prédictions Électorales AURA 2026–2028",
+  "uid": "elections-aura",
+  "version": 1
+}

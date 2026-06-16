@@ -1,0 +1,17 @@
+apiVersion: 1
+
+datasources:
+  - name: ElectionsAURA
+    type: postgres
+    uid: elections-postgres
+    url: postgres:5432
+    database: elections_aura
+    user: elections
+    secureJsonData:
+      password: elections2024
+    jsonData:
+      sslmode: disable
+      postgresVersion: 1500
+      timescaledb: false
+    isDefault: true
+    editable: false
